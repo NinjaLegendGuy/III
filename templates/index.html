@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>III</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            background-color: #2854a0;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            margin-top: 0;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 200px;
+            background-color: #fff;
+            padding: 10px;
+            z-index: 1;
+        }
+
+        .sidebar-header {
+            margin-bottom: 20px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-menu-item {
+            margin-bottom: 5px;
+        }
+
+        .sidebar-menu-link {
+            display: block;
+            padding: 5px;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .sidebar-menu-link:hover {
+            background-color: #f2f2f2;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 60px;
+            padding-bottom: 80px;
+            background-color: #f9f9f9;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        .message-container {
+        width: 100vw;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 10px;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 5px;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+
+        .user-message {
+            background-color: #dcf8c6;
+        }
+
+        .assistant-message {
+        background-color: #7bc4f1;
+        align-self: flex-end;
+        }
+
+
+        .message-label {
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #777;
+        }
+
+        .user-input-container {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50%;
+            max-width: 800px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+            padding: 10px;
+            z-index: 1;
+        }
+
+        .user-input {
+            width: 100%;
+            height: 30px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .user-input-button {
+            padding: 5px;
+            border: none;
+            background-color: transparent;
+            color: #75b8c4;
+            font-size: 14px;
+            cursor: pointer;
+            transform: rotate(0deg);
+            transition: transform 0.3s;
+        }
+
+        .user-input-button:hover {
+            transform: rotate(-90deg) scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>III</h1>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>Settings</h3>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item">
+                <a href="#" class="sidebar-menu-link">Light Mode</a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="#" class="sidebar-menu-link">Dark Mode</a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="chat-container">
+        <div class="message-container" id="messageContainer"></div>
+
+        <form id="messageForm">
+            <div class="user-input-container">
+                <input type="text" id="userInput" placeholder="Send a message..." class="user-input">
+                <button type="submit" id="sendButton" class="user-input-button">&#10148;</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const messageContainer = document.getElementById('messageContainer');
+        const messageForm = document.getElementById('messageForm');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const lightModeLink = document.querySelector('.sidebar-menu-link:nth-child(1)');
+        const darkModeLink = document.querySelector('.sidebar-menu-link:nth-child(2)');
+
+        messageForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const userMessage = userInput.value.trim();
+            if (userMessage) {
+                displayUserMessage(userMessage);
+
+                // Send user input to the backend for processing
+                await sendUserInput(userMessage);
+
+                // Clear the user input field
+                userInput.value = '';
+            }
+        });
+
+        lightModeLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            toggleTheme('light');
+        });
+
+        darkModeLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            toggleTheme('dark');
+        });
+
+        async function sendUserInput(userInput) {
+            const formData = new FormData();
+            formData.append('user_input', userInput);
+
+            const response = await fetch('/', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.text();
+
+            displayAssistantMessage(data);
+        }
+
+        function displayUserMessage(message) {
+            const userMessageContainer = document.createElement('div');
+            userMessageContainer.classList.add('clearfix');
+            userMessageContainer.classList.add('message');
+            userMessageContainer.classList.add('user-message');
+
+            const messageLabel = document.createElement('span');
+            messageLabel.classList.add('message-label');
+            messageLabel.innerText = 'You:';
+
+            const userMessage = document.createElement('p');
+            userMessage.innerText = message;
+
+            const timestamp = document.createElement('span');
+            timestamp.classList.add('timestamp');
+            timestamp.innerText = getCurrentTimestamp();
+
+            userMessageContainer.appendChild(messageLabel);
+            userMessageContainer.appendChild(userMessage);
+            userMessageContainer.appendChild(timestamp);
+
+            messageContainer.appendChild(userMessageContainer);
+        }
+
+        function displayAssistantMessage(message) {
+            const assistantMessageContainer = document.createElement('div');
+            assistantMessageContainer.classList.add('clearfix');
+            assistantMessageContainer.classList.add('message');
+            assistantMessageContainer.classList.add('assistant-message');
+
+            const messageLabel = document.createElement('span');
+            messageLabel.classList.add('message-label');
+            messageLabel.innerText = 'AI:';
+
+            const assistantMessage = document.createElement('p');
+            assistantMessage.innerText = message;
+
+            const timestamp = document.createElement('span');
+            timestamp.classList.add('timestamp');
+            timestamp.innerText = getCurrentTimestamp();
+
+            assistantMessageContainer.appendChild(messageLabel);
+            assistantMessageContainer.appendChild(assistantMessage);
+            assistantMessageContainer.appendChild(timestamp);
+
+            messageContainer.appendChild(assistantMessageContainer);
+        }
+
+        function getCurrentTimestamp() {
+            const date = new Date();
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        function toggleTheme(theme) {
+            document.body.classList.remove('light-theme', 'dark-theme');
+            document.body.classList.add(`${theme}-theme`);
+        }
+    </script>
+</body>
+</html>
